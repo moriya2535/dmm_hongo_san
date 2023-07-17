@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TaskRegisterPostRequest;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Task as TaskModel;
+use App\Models\ShoppingList as ShoppingListModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\CompletedTask as CompletedTaskModel;
@@ -19,10 +19,8 @@ class ShoppingListController extends Controller
      */
     protected function getListBuilder()
     {
-        return TaskModel::where('user_id', Auth::id())
-                     ->orderBy('priority', 'DESC')
-                     ->orderBy('period')
-                     ->orderBy('created_at');
+        return ShoppingListModel::where('user_id', Auth::id())
+                     ->orderBy('name');
     }
 
     /**
@@ -38,12 +36,6 @@ class ShoppingListController extends Controller
         // 一覧の取得
         $list = $this->getListBuilder()
                      ->paginate($per_page);
-/*
-$sql = $this->getListBuilder()
-            ->toSql();
-//echo "<pre>\n"; var_dump($sql, $list); exit;
-var_dump($sql);
-*/
         //
         return view('task.list', ['list' => $list]);
     }
@@ -55,17 +47,13 @@ var_dump($sql);
     {
         // validate済みのデータの取得
         $datum = $request->validated();
-        //
-        //$user = Auth::user();
-        //$id = Auth::id();
-        //var_dump($datum, $user, $id); exit;
 
         // user_id の追加
         $datum['user_id'] = Auth::id();
 
         // テーブルへのINSERT
         try {
-            $r = TaskModel::create($datum);
+            $r = ShoppingListModel::create($datum);
         } catch(\Throwable $e) {
             // XXX 本当はログに書く等の処理をする。今回は一端「出力する」だけ
             echo $e->getMessage();
@@ -73,29 +61,12 @@ var_dump($sql);
         }
 
         // タスク登録成功
-        $request->session()->flash('front.task_register_success', true);
+        $request->session()->flash('front.shopping_list_register_success', true);
 
         //
-        return redirect('/task/list');
+        return redirect(route('front.list'));
     }
 
-    /**
-     * タスクの詳細閲覧
-     */
-    public function detail($task_id)
-    {
-        //
-        return $this->singleTaskRender($task_id, 'task.detail');
-    }
-
-    /**
-     * タスクの編集画面表示
-     */
-    public function edit($task_id)
-    {
-        //
-        return $this->singleTaskRender($task_id, 'task.edit');
-    }
 
     /**
      * 「単一のタスク」Modelの取得
@@ -103,7 +74,7 @@ var_dump($sql);
     protected function getTaskModel($task_id)
     {
         // task_idのレコードを取得する
-        $task = TaskModel::find($task_id);
+        $task = ShoppingListModel::find($task_id);
         if ($task === null) {
             return null;
         }
@@ -130,39 +101,6 @@ var_dump($sql);
         return view($template_name, ['task' => $task]);
     }
 
-    /**
-     * タスクの編集処理
-     */
-    public function editSave(TaskRegisterPostRequest $request, $task_id)
-    {
-        // formからの情報を取得する(validate済みのデータの取得)
-        $datum = $request->validated();
-
-        // task_idのレコードを取得する
-        $task = $this->getTaskModel($task_id);
-        if ($task === null) {
-            return redirect('/task/list');
-        }
-
-        // レコードの内容をUPDATEする
-        $task->name = $datum['name'];
-        $task->period = $datum['period'];
-        $task->detail = $datum['detail'];
-        $task->priority = $datum['priority'];
-/*
-        // 可変変数を使った書き方(参考)
-        foreach($datum as $k => $v) {
-            $task->$k = $v;
-        }
-*/
-        // レコードを更新
-        $task->save();
-
-        // タスク編集成功
-        $request->session()->flash('front.task_edit_success', true);
-        // 詳細閲覧画面にリダイレクトする
-        return redirect(route('detail', ['task_id' => $task->id]));
-    }
 
     /**
      * 削除処理
@@ -231,108 +169,6 @@ var_dump($sql);
 
         // 一覧に遷移する
         return redirect('/task/list');
-    }
-
-    /**
-     * CSV ダウンロード
-     */
-    public function csvDownload()
-    {
-/*
-        // 一覧取得用のBuilderインスタンスを取得
-        $builder = $this->getListBuilder();
-
-        // 「動的にresponseを作る」インスタンスをreturnする
-        return new StreamedResponse(
-            function () use ($builder) {
-                // CSVの並び順設定
-                $data_list = [
-                    'id' => 'タスクID',
-                    'name' => 'タスク名',
-                    'priority' => '重要度',
-                    'period' => '期限',
-                    'detail' => 'タスク詳細',
-                    'created_at' => 'タスク作成日',
-                    'updated_at' => 'タスク修正日',
-                ];
-
-                // 出力＋文字コード変換
-                $file = new \SplFileObject('php://filter/write=convert.iconv.UTF-8%2FSJIS/resource=php://output', 'w');
-
-                // データを「指定件数」づつ取得
-                $builder->chunk(1000, function ($tasks) use ($file, $data_list) {
-                    // 取得した「指定件数」毎に処理
-                    foreach ($tasks as $datum) {
-                        $awk = []; // 作業領域の確保
-                        // $data_listに書いてある順番に、書いてある要素だけを $awkに格納する
-                        foreach($data_list as $k => $v) {
-                            if ($k === 'priority') {
-                                $awk[] = $datum->getPriorityString();
-                            } else {
-                                $awk[] = $datum->$k;
-                            }
-                        }
-                        // CSVの1行を出力
-                        $file->fputcsv($awk);
-                    }
-                });
-            },
-            200,
-            [
-                'Content-Type' => 'text/csv',
-                'Content-Disposition' => 'attachment; filename="task_list.' . date('Ymd') . '.csv"',
-            ]
-        );
-*/
-        //
-        $data_list = [
-            'id' => 'タスクID',
-            'name' => 'タスク名',
-            'priority' => '重要度',
-            'period' => '期限',
-            'detail' => 'タスク詳細',
-            'created_at' => 'タスク作成日',
-            'updated_at' => 'タスク修正日',
-        ];
-
-        /* 「ダウンロードさせたいCSV」を作成する */
-        // データを取得する
-        $list = $this->getListBuilder()->get();
-
-        // バッファリングを開始
-        ob_start();
-
-        // 出力用のファイルハンドルを作成する
-        $file = new \SplFileObject('php://output', 'w');
-        // ヘッダを書き込む
-        $file->fputcsv(array_values($data_list));
-        // CSVをファイルに書き込む(出力する)
-        foreach($list as $datum) {
-            $awk = []; // 作業領域の確保
-            // $data_listに書いてある順番に、書いてある要素だけを $awkに格納する
-            foreach($data_list as $k => $v) {
-                if ($k === 'priority') {
-                    $awk[] = $datum->getPriorityString();
-                } else {
-                    $awk[] = $datum->$k;
-                }
-            }
-            // CSVの1行を出力
-            $file->fputcsv($awk);
-        }
-
-        // 現在�����バッファの中身を取得し、出力バッファを削除する
-        $csv_string = ob_get_clean();
-
-        // 文字コードを変換する
-        $csv_string_sjis = mb_convert_encoding($csv_string, 'SJIS', 'UTF-8');
-
-        // ダウンロードファイル名の作成
-        $download_filename = 'task_list.' . date('Ymd') . '.csv';
-        // CSVを出力する
-        return response($csv_string_sjis)
-                ->header('Content-Type', 'text/csv')
-                ->header('Content-Disposition', 'attachment; filename="' . $download_filename . '"');
     }
 
 }

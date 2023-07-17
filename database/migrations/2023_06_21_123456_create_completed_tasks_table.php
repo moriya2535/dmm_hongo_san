@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateCompletedTasksTable extends Migration
+class CreateCompletedShoppingListsTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,16 +13,13 @@ class CreateCompletedTasksTable extends Migration
      */
     public function up()
     {
-        Schema::create('completed_tasks', function (Blueprint $table) {
+        Schema::create('completed_shopping_lists', function (Blueprint $table) {
             $table->unsignedInteger('id');
-            $table->string('name', 128)->comment('タスク名');
-            $table->date('period')->comment('タスクの期限');
-            $table->text('detail')->comment('タスクの詳細');
-            $table->unsignedTinyInteger('priority')->comment('重要度:(1:低い, 2:普通, 3:高い)');
-            $table->unsignedBigInteger('user_id')->comment('このタスクの所有者');
+            $table->string('name', 128);
+            $table->unsignedBigInteger('user_id');
             $table->foreign('user_id')->references('id')->on('users'); // 外部キー制約
             //$table->timestamps();
-            $table->dateTime('created_at')->useCurrent()->comment('タスク完了日時');
+            $table->dateTime('created_at')->useCurrent();
             $table->dateTime('updated_at')->useCurrent()->useCurrentOnUpdate();
             //
             $table->primary('id');
@@ -36,6 +33,6 @@ class CreateCompletedTasksTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('completed_tasks');
+        Schema::dropIfExists('completed_shopping_lists');
     }
 }
