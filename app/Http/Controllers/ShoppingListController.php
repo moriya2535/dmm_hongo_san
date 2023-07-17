@@ -12,7 +12,7 @@ use App\Models\CompletedTask as CompletedTaskModel;
 
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-class TaskController extends Controller
+class ShoppingListController extends Controller
 {
     /**
      * 一覧用の Illuminate\Database\Eloquent\Builder インスタンスの取得
