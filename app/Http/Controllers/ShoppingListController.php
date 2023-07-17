@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\ShoppingList as ShoppingListModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Models\CompletedTask as CompletedTaskModel;
+use App\Models\CompletedShoppingList as CompletedShoppingListModel;
 
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -145,7 +145,7 @@ class ShoppingListController extends Controller
             $dask_datum = $task->toArray();
             unset($dask_datum['created_at']);
             unset($dask_datum['updated_at']);
-            $r = CompletedTaskModel::create($dask_datum);
+            $r = CompletedShoppingListModel::create($dask_datum);
             if ($r === null) {
                 // insertで失敗したのでトランザクション終了
                 throw new \Exception('');
@@ -155,20 +155,20 @@ class ShoppingListController extends Controller
             // トランザクション終了
             DB::commit();
             // 完了メッセージ出力
-            $request->session()->flash('front.task_completed_success', true);
+            $request->session()->flash('front.shopping_list_completed_success', true);
         } catch(\Throwable $e) {
 //var_dump($e->getMessage()); exit;
             // トランザクション異常終了
             DB::rollBack();
             // 完了失敗メッセージ出力
-            $request->session()->flash('front.task_completed_failure', true);
+            $request->session()->flash('front.shopping_list_completed_failure', true);
 
             //具体的なエラーの表示
             var_dump($e->getMessage()); exit;
         }
 
         // 一覧に遷移する
-        return redirect('/task/list');
+        return redirect(route('front.list'));
     }
 
 }
