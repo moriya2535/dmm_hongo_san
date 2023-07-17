@@ -113,11 +113,11 @@ class ShoppingListController extends Controller
         // タスクを削除する
         if ($task !== null) {
             $task->delete();
-            $request->session()->flash('front.task_delete_success', true);
+            $request->session()->flash('front.shopping_list_delete_success', true);
         }
 
         // 一覧に遷移する
-        return redirect('/task/list');
+        return redirect('/shopping_list/list');
     }
 
     /**

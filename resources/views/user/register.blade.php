@@ -16,7 +16,7 @@
 @endif
 
 
-    <form method="POST" action="{{ route('user.register.post') }}">
+    <form action="/user/register" method="post">
         @csrf
 
         <label for="name">名前:</label>
