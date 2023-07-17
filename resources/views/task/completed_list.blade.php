@@ -1,31 +1,20 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>完了タスク一覧</title>
-</head>
-<body>
-    <h1>完了タスク一覧</h1>
+@extends('layout')
 
-    <table border="1">
-        <a href="{{ route('task.list') }}">タスク一覧に戻る</a>
+{{-- タイトル --}}
+@section('title')(購入済み「買うもの」一覧画面)@endsection
+
+{{-- メインコンテンツ --}}
+@section('contets')
+        <h1>購入済み「買うもの」一覧</h1>
+        <a href="/shopping_list/list">「買うもの」一覧に戻る</a><br>
+        <table border="1">
         <tr>
-            <th>タスク名</th>
-            <th>期限</th>
-            <th>重要度</th>
-            <th>タスク終了日</th>
-        </tr>
+            <th>「買うもの」名
+            <th>購入日
         @foreach ($completedTasks as $task)
         <tr>
             <td>{{ $task->name }}</td>
-            <td>{{ $task->period }}</td>
-            <td>{{ $task->getPriorityString() }}</td>
-            <td>
-                @if ($task->created_at)
-                    {{ $task->created_at->setTimezone('Asia/Tokyo')->format('Y-m-d H:i:s') }}
-                @else
-
-                @endif
-            </td>
+            <td>{{ $task->created_at->format('Y/m/d') }}</td>
         </tr>
         @endforeach
     </table>
@@ -47,6 +36,6 @@
         @endif
     </p>
     <hr> <!-- 横ライン -->
-    <a href="{{ route('logout') }}">ログアウト</a>
+    <a href="/logout">ログアウト</a><br>
 </body>
 </html>
