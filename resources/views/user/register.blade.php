@@ -27,6 +27,9 @@
 
         <label for="password">パスワード:</label>
         <input type="password" id="password" name="password" maxlength="72"><br>
+        
+        <label for="password">パスワード(再度):</label>
+        <input type="password" id="password_confirmation" name="password_confirmation" maxlength="72"><br>
 
         <input type="submit" value="登録する">
     </form>

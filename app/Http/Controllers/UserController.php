@@ -17,10 +17,14 @@ class UserController extends Controller
     public function register(UserRegisterPost $request)
     {
         $validatedData = $request->validated();
-
-        $validatedData['password'] = Hash::make($validatedData['password']);
-
-        User::create($validatedData);
+        
+        try {
+            $validatedData['password'] = Hash::make($validatedData['password']);
+            User::create($validatedData);
+        } catch(\Throwable $e) {
+            echo $e->getMessage();
+            exit;
+        }
 
         return redirect('/')->with('message', '登録が完了しました');
     }
